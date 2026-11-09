@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStoreContext } from '../../contextApi/ContextApi';
 import { Hourglass } from 'react-loader-spinner';
 import Graph from './Graph';
+import { getFrontendUrl } from '../../utils/helper';
 
 const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
     const { token } = useStoreContext();
@@ -20,10 +21,8 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
     const [selectedUrl, setSelectedUrl] = useState("");
     const [analyticsData, setAnalyticsData] = useState([]);
 
-    const subDomain = import.meta.env.VITE_REACT_FRONT_END_URL.replace(
-        /^https?:\/\//,
-        ""
-      );
+    const frontendUrl = getFrontendUrl();
+    const subDomain = frontendUrl.replace(/^https?:\/\//, "");
 
     const analyticsHandler = (shortUrl) => {
         if (!analyticToggle) {
@@ -35,7 +34,9 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
     const fetchMyShortUrl = async () => {
         setLoader(true);
         try {
-             const { data } = await api.get(`/api/urls/analytics/${selectedUrl}?startDate=2024-12-01T00:00:00&endDate=2025-12-31T23:59:59`, {
+             const startYear = new Date().getFullYear() - 1;
+             const endYear = new Date().getFullYear() + 1;
+             const { data } = await api.get(`/api/urls/analytics/${selectedUrl}?startDate=${startYear}-01-01T00:00:00&endDate=${endYear}-12-31T23:59:59`, {
                         headers: {
                           "Content-Type": "application/json",
                           Accept: "application/json",
@@ -72,12 +73,13 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
                 {subDomain + "/" + `${shortUrl}`}
             </a> */}
 
-            <Link
-              target='_'
-              className='text-[17px]  font-montserrat font-[600] text-linkColor'
-              to={import.meta.env.VITE_REACT_FRONT_END_URL + "/s/" + `${shortUrl}`}>
+            <a
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-[17px]  font-montserrat font-[600] text-linkColor hover:underline'
+              href={`${frontendUrl}/s/${shortUrl}`}>
                   {subDomain + "/s/" + `${shortUrl}`}
-            </Link>
+            </a>
             <FaExternalLinkAlt className="text-linkColor" />
             </div>
 
@@ -112,7 +114,7 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
         <div className="flex  flex-1  sm:justify-end items-center gap-4">
             <CopyToClipboard
                 onCopy={() => setIsCopied(true)}
-                text={`${import.meta.env.VITE_REACT_FRONT_END_URL + "/s/" + `${shortUrl}`}`}
+                text={`${frontendUrl}/s/${shortUrl}`}
             >
                 <div className="flex cursor-pointer gap-1 items-center bg-btnColor py-2  font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white ">
                 <button className="">{isCopied ? "Copied" : "Copy"}</button>

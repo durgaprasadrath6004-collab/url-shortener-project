@@ -19,3 +19,10 @@ export const getSubDomain = (location) => {
     const sliceTill = isLocalhost ? -1 : -2;
     return locationParts.slice(0, sliceTill).join("");
 };
+
+export const getFrontendUrl = () => {
+    if (typeof window !== "undefined" && window.location && window.location.origin) {
+        return window.location.origin;
+    }
+    return (import.meta.env.VITE_REACT_FRONT_END_URL || "http://localhost:5173").replace(/\/$/, "");
+};

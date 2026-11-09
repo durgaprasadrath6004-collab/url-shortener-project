@@ -7,6 +7,7 @@ import { Tooltip } from '@mui/material';
 import { RxCross2 } from 'react-icons/rx';
 import api from '../../api/api';
 import toast from 'react-hot-toast';
+import { getFrontendUrl } from '../../utils/helper';
 
 const CreateNewShorten = ({ setOpen, refetch }) => {
     const { token } = useStoreContext();
@@ -35,19 +36,38 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
             },
           });
 
-          const shortenUrl = `${import.meta.env.VITE_REACT_FRONT_END_URL + "/s/" + `${res.shortUrl}`}`;
-          navigator.clipboard.writeText(shortenUrl).then(() => {
-            toast.success("Short URL Copied to Clipboard", {
+          const frontendUrl = getFrontendUrl();
+          const shortenUrl = `${frontendUrl}/s/${res.shortUrl}`;
+
+          if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shortenUrl).then(() => {
+              toast.success("Short URL Copied to Clipboard", {
                 position: "bottom-center",
                 className: "mb-5",
                 duration: 3000,
+              });
+            }).catch(() => {
+              toast.success("Short URL created successfully!", {
+                position: "bottom-center",
+                className: "mb-5",
+                duration: 3000,
+              });
             });
-          });
+          } else {
+            toast.success("Short URL created successfully!", {
+              position: "bottom-center",
+              className: "mb-5",
+              duration: 3000,
+            });
+          }
 
-          // await refetch();
+          if (refetch) {
+            await refetch();
+          }
           reset();
           setOpen(false);
     } catch (error) {
+        console.error("Create short URL error:", error);
         toast.error("Create ShortURL Failed");
     } finally {
         setLoading(false);

@@ -6,7 +6,8 @@ const ShortenUrlPage = () => {
 
     useEffect(() => {
         if (url) {
-            window.location.href = import.meta.env.VITE_BACKEND_URL + `/${url}`;
+            const backend = (import.meta.env.VITE_BACKEND_URL || "https://url-shortener-sb-g3if.onrender.com").replace(/\/$/, "");
+            window.location.href = `${backend}/${url}`;
         }
     }, [url]);
   return <p>Redirecting...</p>;
