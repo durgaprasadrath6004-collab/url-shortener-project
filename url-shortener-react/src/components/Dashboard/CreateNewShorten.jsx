@@ -50,8 +50,8 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
             },
           });
 
-          const frontendUrl = getFrontendUrl();
-          const shortenUrl = `${frontendUrl}/s/${res.shortUrl}`;
+          const backendUrl = (import.meta.env.VITE_BACKEND_URL || "https://url-shortener-sb-g3if.onrender.com").replace(/\/$/, "");
+          const shortenUrl = `${backendUrl}/${res.shortUrl}`;
 
           if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(shortenUrl).then(() => {
