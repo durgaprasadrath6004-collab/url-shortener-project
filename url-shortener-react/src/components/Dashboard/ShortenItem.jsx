@@ -4,7 +4,7 @@ import CopyToClipboard from 'react-copy-to-clipboard';
 import { FaExternalLinkAlt, FaRegCalendarAlt } from 'react-icons/fa';
 import { IoCopy } from 'react-icons/io5';
 import { LiaCheckSolid } from 'react-icons/lia';
-import { MdAnalytics, MdOutlineAdsClick, MdDelete } from 'react-icons/md';
+import { MdAnalytics, MdOutlineAdsClick, MdDelete, MdQrCode2, MdDownload } from 'react-icons/md';
 import api from '../../api/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStoreContext } from '../../contextApi/ContextApi';
@@ -13,6 +13,7 @@ import Graph from './Graph';
 import { getFrontendUrl } from '../../utils/helper';
 import { useQueryClient } from 'react-query';
 import toast from 'react-hot-toast';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => {
     const { token } = useStoreContext();
@@ -20,6 +21,7 @@ const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => 
     const queryClient = useQueryClient();
     const [isCopied, setIsCopied] = useState(false);
     const [analyticToggle, setAnalyticToggle] = useState(false);
+    const [qrToggle, setQrToggle] = useState(false);
     const [loader, setLoader] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [selectedUrl, setSelectedUrl] = useState("");
@@ -83,6 +85,20 @@ const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => 
             toast.error(msg);
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    const downloadQrCode = () => {
+        const canvas = document.getElementById(`qr-code-${shortUrl}`);
+        if (canvas) {
+            const pngUrl = canvas.toDataURL("image/png");
+            const downloadLink = document.createElement("a");
+            downloadLink.href = pngUrl;
+            downloadLink.download = `qrcode-${shortUrl}.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            toast.success("QR Code downloaded!");
         }
     };
 
@@ -158,6 +174,14 @@ const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => 
             </CopyToClipboard>
 
             <div
+                onClick={() => setQrToggle(!qrToggle)}
+                className={`flex cursor-pointer gap-1 items-center ${qrToggle ? 'bg-purple-800' : 'bg-purple-600 hover:bg-purple-700'} py-2 font-semibold shadow-md shadow-slate-500 px-5 rounded-md text-white transition-all`}
+            >
+                <button type="button">QR Code</button>
+                <MdQrCode2 className="text-lg" />
+            </div>
+
+            <div
                 onClick={() => analyticsHandler(shortUrl)}
                 className="flex cursor-pointer gap-1 items-center bg-rose-700 py-2 font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white "
             >
@@ -176,6 +200,38 @@ const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => 
             </div>
           </div>
         </div>
+
+        {qrToggle && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 py-6 border-t border-slate-300 mt-2 mb-4 bg-white rounded-lg p-5 shadow-inner">
+                <div className="bg-white p-3 rounded-xl shadow-md border border-slate-200 flex flex-col items-center">
+                    <QRCodeCanvas
+                        id={`qr-code-${shortUrl}`}
+                        value={directShortUrl}
+                        size={170}
+                        level="H"
+                        includeMargin={true}
+                    />
+                </div>
+                <div className="flex flex-col items-center sm:items-start gap-2 max-w-sm">
+                    <h4 className="font-bold text-slate-800 text-lg">Scan to Visit Short URL</h4>
+                    <p className="text-slate-600 text-xs font-mono bg-slate-100 p-2 rounded border border-slate-200 break-all w-full text-center sm:text-left">
+                        {directShortUrl}
+                    </p>
+                    <p className="text-xs text-slate-500 text-center sm:text-left">
+                        Scan with your smartphone camera to open this link directly.
+                    </p>
+                    <button
+                        onClick={downloadQrCode}
+                        className="mt-2 flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-5 rounded-md shadow transition-colors text-sm"
+                        type="button"
+                    >
+                        <MdDownload className="text-lg" />
+                        Download QR Image (PNG)
+                    </button>
+                </div>
+            </div>
+        )}
+
     <React.Fragment>
         <div className={`${
             analyticToggle ? "flex" : "hidden"
