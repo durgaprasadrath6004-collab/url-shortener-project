@@ -71,3 +71,4 @@ services:
           type: web
           name: url-shortener-react
           property: url
+
