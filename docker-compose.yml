@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: url-shortener-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-urlshortener}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d urlshortener"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - url-shortener-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: url-shortener-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - url-shortener-net
+
+  backend:
+    build:
+      context: ./url-shortener-sb
+      dockerfile: Dockerfile
+    container_name: url-shortener-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-urlshortener}
+      DATABASE_USERNAME: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DATABASE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      JWT_SECRET: ${JWT_SECRET:-c29tZXN1cGVyc2VjcmV0a2V5Zm9ydXJsc2hvcnRlbmVycHJvamVjdDEyMzQ1Ng==}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000,http://localhost:5173}
+    ports:
+      - "8080:8080"
+    networks:
+      - url-shortener-net
+
+  frontend:
+    build:
+      context: ./url-shortener-react
+      dockerfile: Dockerfile
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8080}
+        VITE_REACT_FRONT_END_URL: ${VITE_REACT_FRONT_END_URL:-http://localhost:3000}
+        VITE_REACT_SUBDOMAIN: ${VITE_REACT_SUBDOMAIN:-http://url.localhost:3000}
+    container_name: url-shortener-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - url-shortener-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  url-shortener-net:
+    driver: bridge
+
