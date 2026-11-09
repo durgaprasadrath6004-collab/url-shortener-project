@@ -8,10 +8,12 @@ import { RxCross2 } from 'react-icons/rx';
 import api from '../../api/api';
 import toast from 'react-hot-toast';
 import { getFrontendUrl } from '../../utils/helper';
+import { useQueryClient } from 'react-query';
 
 const CreateNewShorten = ({ setOpen, refetch }) => {
     const { token } = useStoreContext();
     const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient();
 
   const {
     register,
@@ -64,6 +66,13 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
               className: "mb-5",
               duration: 3000,
             });
+          }
+
+          try {
+            await queryClient.invalidateQueries(["my-shortenurls"]);
+            await queryClient.invalidateQueries("url-totalclick");
+          } catch (e) {
+            console.error("Query invalidation error:", e);
           }
 
           if (refetch) {

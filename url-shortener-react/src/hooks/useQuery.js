@@ -3,7 +3,7 @@ import api from "../api/api"
 
 
 export const useFetchMyShortUrls = (token, onError) => {
-    return useQuery("my-shortenurls",
+    return useQuery(["my-shortenurls", token],
          async () => {
             return await api.get(
                 "/api/urls/myurls",
@@ -18,13 +18,13 @@ export const useFetchMyShortUrls = (token, onError) => {
     },
           {
             select: (data) => {
-                const sortedData = data.data.sort(
+                const list = data?.data || [];
+                return [...list].sort(
                     (a, b) => new Date(b.createdDate) - new Date(a.createdDate)
                 );
-                return sortedData;
             },
             onError,
-            staleTime: 5000
+            staleTime: 0
           }
         );
 };
