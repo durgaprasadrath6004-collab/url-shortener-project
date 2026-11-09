@@ -39,6 +39,12 @@ public class UrlMappingService {
     }
 
     public UrlMappingDTO createShortUrl(String originalUrl, User user) {
+        if (originalUrl != null) {
+            originalUrl = originalUrl.trim();
+            if (!originalUrl.startsWith("http://") && !originalUrl.startsWith("https://")) {
+                originalUrl = "https://" + originalUrl;
+            }
+        }
         String shortUrl = generateShortUrl();
         UrlMapping urlMapping = new UrlMapping();
         urlMapping.setOriginalUrl(originalUrl);

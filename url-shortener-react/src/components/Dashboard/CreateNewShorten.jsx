@@ -28,7 +28,12 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
   const createShortUrlHandler = async (data) => {
     setLoading(true);
     try {
-        const { data: res } = await api.post("/api/urls/shorten", data, {
+        let originalUrl = data.originalUrl?.trim() || "";
+        if (!originalUrl.startsWith("http://") && !originalUrl.startsWith("https://")) {
+            originalUrl = "https://" + originalUrl;
+        }
+
+        const { data: res } = await api.post("/api/urls/shorten", { originalUrl }, {
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
@@ -103,7 +108,7 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
 
         <button
           className="bg-customRed font-semibold text-white w-32  bg-custom-gradient  py-2  transition-colors  rounded-md my-3"
-          type="text"
+          type="submit"
         >
           {loading ? "Loading..." : "Create"}
         </button>

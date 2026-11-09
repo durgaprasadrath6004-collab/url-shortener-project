@@ -21,7 +21,7 @@ const TextField = ({
         </label>
   
         <input
-          type={type}
+          type={type === "url" ? "text" : type}
           id={id}
           placeholder={placeholder}
           className={`${

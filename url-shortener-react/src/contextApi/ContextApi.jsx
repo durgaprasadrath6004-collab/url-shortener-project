@@ -3,9 +3,19 @@ import { createContext, useContext, useState } from "react";
 const ContextApi = createContext();
 
 export const ContextProvider = ({ children }) => {
-    const getToken = localStorage.getItem("JWT_TOKEN")
-        ? JSON.parse(localStorage.getItem("JWT_TOKEN"))
-        : null;
+    let getToken = null;
+    try {
+        const item = localStorage.getItem("JWT_TOKEN");
+        if (item) {
+            try {
+                getToken = JSON.parse(item);
+            } catch {
+                getToken = item;
+            }
+        }
+    } catch {
+        getToken = null;
+    }
 
     const [token, setToken] = useState(getToken);
 
