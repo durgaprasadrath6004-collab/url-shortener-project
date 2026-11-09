@@ -4,20 +4,24 @@ import CopyToClipboard from 'react-copy-to-clipboard';
 import { FaExternalLinkAlt, FaRegCalendarAlt } from 'react-icons/fa';
 import { IoCopy } from 'react-icons/io5';
 import { LiaCheckSolid } from 'react-icons/lia';
-import { MdAnalytics, MdOutlineAdsClick } from 'react-icons/md';
+import { MdAnalytics, MdOutlineAdsClick, MdDelete } from 'react-icons/md';
 import api from '../../api/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStoreContext } from '../../contextApi/ContextApi';
 import { Hourglass } from 'react-loader-spinner';
 import Graph from './Graph';
 import { getFrontendUrl } from '../../utils/helper';
+import { useQueryClient } from 'react-query';
+import toast from 'react-hot-toast';
 
-const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
+const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => {
     const { token } = useStoreContext();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [isCopied, setIsCopied] = useState(false);
     const [analyticToggle, setAnalyticToggle] = useState(false);
     const [loader, setLoader] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [selectedUrl, setSelectedUrl] = useState("");
     const [analyticsData, setAnalyticsData] = useState([]);
 
@@ -55,6 +59,30 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
             setLoader(false);
         }
     }
+
+    const deleteHandler = async () => {
+        const confirmed = window.confirm(`Are you sure you want to delete short URL: ${shortUrl}?`);
+        if (!confirmed) return;
+
+        setIsDeleting(true);
+        try {
+            await api.delete(`/api/urls/${id}`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    Authorization: "Bearer " + token,
+                },
+            });
+            toast.success("Short URL deleted successfully!");
+            queryClient.invalidateQueries(["my-shortenurls"]);
+            queryClient.invalidateQueries("url-totalclick");
+        } catch (error) {
+            console.error("Delete failed:", error);
+            toast.error(error?.response?.data?.message || "Failed to delete short URL");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
 
     useEffect(() => {
@@ -133,7 +161,17 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
             >
                 <button>Analytics</button>
                 <MdAnalytics className="text-md" />
-          </div>
+            </div>
+
+            <div
+                onClick={!isDeleting ? deleteHandler : undefined}
+                className={`flex cursor-pointer gap-1 items-center bg-red-600 hover:bg-red-700 py-2 font-semibold shadow-md shadow-slate-500 px-5 rounded-md text-white transition-all ${isDeleting ? "opacity-60 cursor-not-allowed" : ""}`}
+            >
+                <button disabled={isDeleting} type="button">
+                    {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+                <MdDelete className="text-lg" />
+            </div>
           </div>
         </div>
     <React.Fragment>

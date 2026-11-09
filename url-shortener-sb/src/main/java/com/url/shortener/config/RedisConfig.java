@@ -56,3 +56,4 @@ public class RedisConfig {
         return new StringRedisTemplate(connectionFactory);
     }
 }
+

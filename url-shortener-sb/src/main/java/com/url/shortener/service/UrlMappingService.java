@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -155,5 +156,33 @@ public class UrlMappingService {
         }
 
         return urlMapping;
+    }
+
+    @Transactional
+    public boolean deleteShortUrl(Long id, User user) {
+        UrlMapping urlMapping = urlMappingRepository.findById(id).orElse(null);
+        if (urlMapping == null) {
+            return false;
+        }
+        if (!urlMapping.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized to delete this URL");
+        }
+        String shortUrl = urlMapping.getShortUrl();
+
+        // Evict from Redis cache
+        if (redisTemplate != null) {
+            try {
+                redisTemplate.delete("short:" + shortUrl);
+                log.info("Evicted deleted shortUrl [{}] from Redis", shortUrl);
+            } catch (Exception e) {
+                log.warn("Failed to evict shortUrl from Redis: {}", e.getMessage());
+            }
+        }
+
+        // Delete click events and mapping
+        clickEventRepository.deleteByUrlMapping(urlMapping);
+        urlMappingRepository.delete(urlMapping);
+        log.info("Deleted shortUrl [{}] with ID [{}] for user [{}]", shortUrl, id, user.getUsername());
+        return true;
     }
 }
