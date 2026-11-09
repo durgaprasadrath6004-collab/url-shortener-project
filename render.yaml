@@ -1,0 +1,73 @@
+databases:
+  - name: url-shortener-db
+    databaseName: urlshortener
+    user: postgres
+    plan: free
+
+services:
+  # 1. Spring Boot Backend Web Service
+  - type: web
+    name: url-shortener-sb
+    runtime: docker
+    dockerContext: ./url-shortener-sb
+    dockerfilePath: ./url-shortener-sb/Dockerfile
+    plan: free
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: url-shortener-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: url-shortener-db
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: url-shortener-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: url-shortener-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: url-shortener-db
+          property: database
+      - key: DATABASE_DIALECT
+        value: org.hibernate.dialect.PostgreSQLDialect
+      - key: JWT_SECRET
+        value: c29tZXN1cGVyc2VjcmV0a2V5Zm9ydXJsc2hvcnRlbmVycHJvamVjdDEyMzQ1Ng==
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: url-shortener-react
+          property: url
+
+  # 2. React Frontend Static Site
+  - type: web
+    name: url-shortener-react
+    runtime: static
+    plan: free
+    rootDir: url-shortener-react
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_BACKEND_URL
+        fromService:
+          type: web
+          name: url-shortener-sb
+          property: url
+      - key: VITE_REACT_FRONT_END_URL
+        fromService:
+          type: web
+          name: url-shortener-react
+          property: url
+      - key: VITE_REACT_SUBDOMAIN
+        fromService:
+          type: web
+          name: url-shortener-react
+          property: url
