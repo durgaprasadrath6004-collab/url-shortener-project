@@ -159,12 +159,23 @@ public class UrlMappingService {
     }
 
     @Transactional
-    public boolean deleteShortUrl(Long id, User user) {
-        UrlMapping urlMapping = urlMappingRepository.findById(id).orElse(null);
+    public boolean deleteShortUrl(String identifier, User user) {
+        UrlMapping urlMapping = null;
+        try {
+            Long id = Long.parseLong(identifier);
+            urlMapping = urlMappingRepository.findById(id).orElse(null);
+        } catch (NumberFormatException ignored) {
+        }
         if (urlMapping == null) {
+            urlMapping = urlMappingRepository.findByShortUrl(identifier);
+        }
+        if (urlMapping == null) {
+            log.warn("UrlMapping not found for deletion identifier: {}", identifier);
             return false;
         }
-        if (!urlMapping.getUser().getId().equals(user.getId())) {
+        if (urlMapping.getUser() != null && user != null && !urlMapping.getUser().getId().equals(user.getId())) {
+            log.warn("User [{}] unauthorized to delete URL [{}] owned by [{}]",
+                    user.getUsername(), identifier, urlMapping.getUser().getUsername());
             throw new RuntimeException("Unauthorized to delete this URL");
         }
         String shortUrl = urlMapping.getShortUrl();
@@ -180,9 +191,13 @@ public class UrlMappingService {
         }
 
         // Delete click events and mapping
-        clickEventRepository.deleteByUrlMapping(urlMapping);
+        try {
+            clickEventRepository.deleteByUrlMapping(urlMapping);
+        } catch (Exception e) {
+            log.warn("deleteByUrlMapping exception: {}", e.getMessage());
+        }
         urlMappingRepository.delete(urlMapping);
-        log.info("Deleted shortUrl [{}] with ID [{}] for user [{}]", shortUrl, id, user.getUsername());
+        log.info("Deleted shortUrl [{}] for user [{}]", shortUrl, user != null ? user.getUsername() : "unknown");
         return true;
     }
 }

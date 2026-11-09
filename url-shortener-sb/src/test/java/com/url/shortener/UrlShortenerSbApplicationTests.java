@@ -54,7 +54,7 @@ class UrlShortenerSbApplicationTests {
         click.setUrlMapping(urlMapping);
         clickEventRepository.save(click);
 
-        boolean deleted = urlMappingService.deleteShortUrl(urlMapping.getId(), user);
+        boolean deleted = urlMappingService.deleteShortUrl(String.valueOf(urlMapping.getId()), user);
         assertTrue(deleted);
     }
 

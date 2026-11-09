@@ -64,9 +64,10 @@ const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => 
         const confirmed = window.confirm(`Are you sure you want to delete short URL: ${shortUrl}?`);
         if (!confirmed) return;
 
+        const targetId = id || shortUrl;
         setIsDeleting(true);
         try {
-            await api.delete(`/api/urls/${id}`, {
+            await api.delete(`/api/urls/${targetId}`, {
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "application/json",
@@ -77,8 +78,9 @@ const ShortenItem = ({ id, originalUrl, shortUrl, clickCount, createdDate }) => 
             queryClient.invalidateQueries(["my-shortenurls"]);
             queryClient.invalidateQueries("url-totalclick");
         } catch (error) {
-            console.error("Delete failed:", error);
-            toast.error(error?.response?.data?.message || "Failed to delete short URL");
+            console.error("Delete failed:", error?.response?.status, error?.response?.data || error?.message);
+            const msg = error?.response?.data?.message || (error?.response?.status === 404 ? "URL not found on server" : "Failed to delete short URL");
+            toast.error(msg);
         } finally {
             setIsDeleting(false);
         }
