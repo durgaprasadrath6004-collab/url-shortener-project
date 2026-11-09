@@ -74,5 +74,18 @@ public class DatabaseConfig {
 
         return new HikariDataSource(config);
     }
+
+    @Bean
+    public org.springframework.boot.CommandLineRunner databaseMigrationRunner(DataSource dataSource) {
+        return args -> {
+            try (java.sql.Connection conn = dataSource.getConnection();
+                 java.sql.Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE url_mapping ALTER COLUMN original_url TYPE TEXT;");
+                log.info("Successfully ensured url_mapping.original_url is TYPE TEXT");
+            } catch (Exception e) {
+                log.debug("Database migration note: {}", e.getMessage());
+            }
+        };
+    }
 }
 

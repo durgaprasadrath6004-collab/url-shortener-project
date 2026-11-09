@@ -9,9 +9,11 @@ import api from '../../api/api';
 import toast from 'react-hot-toast';
 import { getFrontendUrl } from '../../utils/helper';
 import { useQueryClient } from 'react-query';
+import { useNavigate } from 'react-router-dom';
 
 const CreateNewShorten = ({ setOpen, refetch }) => {
     const { token } = useStoreContext();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const queryClient = useQueryClient();
 
@@ -28,6 +30,11 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
   });
 
   const createShortUrlHandler = async (data) => {
+    if (!token) {
+        toast.error("Please login first to create short URLs!");
+        navigate("/login");
+        return;
+    }
     setLoading(true);
     try {
         let originalUrl = data.originalUrl?.trim() || "";
@@ -82,7 +89,11 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
           setOpen(false);
     } catch (error) {
         console.error("Create short URL error:", error);
-        toast.error("Create ShortURL Failed");
+        const errorMsg = error?.response?.data?.message || error?.response?.data?.error || (error?.response?.status === 403 ? "Session expired, please re-login" : null) || error?.message || "Failed";
+        toast.error(`Create ShortURL Failed: ${errorMsg}`);
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+            navigate("/login");
+        }
     } finally {
         setLoading(false);
     }
